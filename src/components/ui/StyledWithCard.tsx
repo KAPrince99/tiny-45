@@ -1,9 +1,10 @@
 "use client";
-import { ClothDataProps } from "@/contexts/CartContext";
+
 import React from "react";
 import ShowCard from "./showCard";
 import { getClothData } from "@/app/actions/cartActions";
 import { useQuery } from "@tanstack/react-query";
+import { ClothDataProps } from "@/types/types";
 
 function shuffleArray(array: ClothDataProps[] | undefined): ClothDataProps[] {
   if (!array) {
@@ -14,7 +15,7 @@ function shuffleArray(array: ClothDataProps[] | undefined): ClothDataProps[] {
 
   for (let i = shuffledArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    // Swap elements
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
 

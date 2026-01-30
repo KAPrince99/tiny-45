@@ -1,6 +1,6 @@
 import React from "react";
 import ShowCard from "./showCard";
-import { createSupabaseClient } from "@/lib/server";
+import { createSupabaseClient } from "../../app/lib/server";
 
 export default async function Catalog() {
   const supabase = await createSupabaseClient();

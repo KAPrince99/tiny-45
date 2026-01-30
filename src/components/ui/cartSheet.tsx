@@ -9,7 +9,6 @@ import {
   deleteSingleCartItem,
 } from "@/app/actions/cartActions";
 import { Button } from "@/components/ui/button";
-
 import {
   Sheet,
   SheetClose,
@@ -19,10 +18,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useCart } from "@/contexts/CartContext";
+import { useCartStore } from "@/store/useCartStore"; // Updated import
 import { CartDataProps, CartItemProps, ClothDataProps } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode, useEffect } from "react";
@@ -36,13 +35,14 @@ interface DataProps {
 }
 
 export function CartSheet({ action, sizeError }: DataProps) {
-  const { isSheetOpen, setIsSheetOpen, setSumOfCartItems, setSizeError } =
-    useCart();
+  const isSheetOpen = useCartStore((state) => state.isSheetOpen);
+  const setIsSheetOpen = useCartStore((state) => state.setIsSheetOpen);
+  const setSumOfCartItems = useCartStore((state) => state.setSumOfCartItems);
+  const setSizeError = useCartStore((state) => state.setSizeError);
+
   const queryClient = useQueryClient();
 
-  const { data: cartItems, isLoading: isCartLoading } = useQuery<
-    UniqueCartItemProps[]
-  >({
+  const { data: cartItems } = useQuery<UniqueCartItemProps[]>({
     queryKey: ["cart"],
     queryFn: getCartData,
     staleTime: 0,
@@ -50,12 +50,13 @@ export function CartSheet({ action, sizeError }: DataProps) {
 
   const totalItemCount =
     cartItems?.reduce((sum, item) => sum + (item.count || 1), 0) || 0;
+
   useEffect(() => {
     setSumOfCartItems(totalItemCount);
   }, [totalItemCount, setSumOfCartItems]);
+
   const deleteMutation = useMutation({
     mutationFn: deleteCartItem,
-
     onMutate: async (itemToDeleteParams: DeleteCartItemParams) => {
       await queryClient.cancelQueries({ queryKey: ["cart"] });
       const previousCart = queryClient.getQueryData(["cart"]);
@@ -65,8 +66,8 @@ export function CartSheet({ action, sizeError }: DataProps) {
           (item) =>
             item.name !== itemToDeleteParams.name ||
             item.price !== itemToDeleteParams.price ||
-            item.size !== itemToDeleteParams.size
-        )
+            item.size !== itemToDeleteParams.size,
+        ),
       );
       return { previousCart };
     },
@@ -76,11 +77,9 @@ export function CartSheet({ action, sizeError }: DataProps) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-
-      const currentCartData = queryClient.getQueryData(["cart"]) as
-        | UniqueCartItemProps[]
-        | undefined;
-
+      const currentCartData = queryClient.getQueryData<UniqueCartItemProps[]>([
+        "cart",
+      ]);
       if (!currentCartData || currentCartData.length === 0) {
         setIsSheetOpen(false);
       }
@@ -91,7 +90,7 @@ export function CartSheet({ action, sizeError }: DataProps) {
     itemName: string,
     itemPrice: string,
     itemSize: string | null,
-    itemColor: string
+    itemColor: string,
   ) {
     deleteMutation.mutate({
       name: itemName,
@@ -103,22 +102,20 @@ export function CartSheet({ action, sizeError }: DataProps) {
 
   const { mutateAsync: addToCartMutation } = useMutation({
     mutationFn: setCartData,
-
     onMutate: async (newCartItem: CartItemProps) => {
       await queryClient.cancelQueries({ queryKey: ["cart"] });
-
       const previousCart = queryClient.getQueryData<UniqueCartItemProps[]>([
         "cart",
       ]);
 
       queryClient.setQueryData<UniqueCartItemProps[]>(["cart"], (old: any) => {
-        if (!old) return [newCartItem as UniqueCartItemProps];
+        if (!old) return [{ ...newCartItem, count: 1 }];
 
         const existingItemIndex = old.findIndex(
           (item: any) =>
             item.name === newCartItem.name &&
             item.size === newCartItem.size &&
-            item.price === newCartItem.price
+            item.price === newCartItem.price,
         );
 
         if (existingItemIndex > -1) {
@@ -128,27 +125,20 @@ export function CartSheet({ action, sizeError }: DataProps) {
             count: (updatedCart[existingItemIndex].count || 1) + 1,
           };
           return updatedCart;
-        } else {
-          return [...old, { ...newCartItem, count: 1 }];
         }
+        return [...old, { ...newCartItem, count: 1 }];
       });
 
       setSizeError(null);
       setIsSheetOpen(true);
-
       return { previousCart };
     },
-
-    onError: (err, variables, context) => {
-      console.error("Error adding to cart, rolling back:", err);
+    onError: (_, __, context) => {
       if (context?.previousCart) {
         queryClient.setQueryData(["cart"], context.previousCart);
-
         setIsSheetOpen(false);
-        alert("Failed to add item to cart. Please try again.");
       }
     },
-
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
@@ -162,6 +152,7 @@ export function CartSheet({ action, sizeError }: DataProps) {
       size: cartData.size,
       cloth_id: cartData.cloth_id,
       color: cartData.color,
+      quantity: 1,
     };
     addToCartMutation(newCartItem);
   }
@@ -177,12 +168,12 @@ export function CartSheet({ action, sizeError }: DataProps) {
     removeSingle(id);
   }
 
-  const cartIsEmpty = cartItems?.length === 0;
+  const cartIsEmpty = !cartItems || cartItems.length === 0;
 
   const cartTotal =
     cartItems?.reduce(
       (sum, item) => sum + parseFloat(item.price) * (item.count || 1),
-      0
+      0,
     ) || 0;
 
   return (
@@ -194,8 +185,8 @@ export function CartSheet({ action, sizeError }: DataProps) {
       >
         <SheetHeader>
           <SheetTitle>Cart</SheetTitle>
-          {cartItems?.length === 0 && <EmptyCart />}
-          {cartItems && cartItems.length > 0 && (
+          {cartIsEmpty && <EmptyCart />}
+          {!cartIsEmpty && (
             <SheetDescription>
               Review your selected items before proceeding to checkout.
             </SheetDescription>
@@ -203,72 +194,67 @@ export function CartSheet({ action, sizeError }: DataProps) {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-4">
-          {cartItems &&
-            cartItems.length > 0 &&
+          {!cartIsEmpty &&
             cartItems.map((item, index) => (
               <div
                 key={item.id || index}
-                className="grid grid-cols-[1fr_2fr] p-2 shadow-sm "
+                className="grid grid-cols-[1fr_2fr] p-2 shadow-sm"
               >
                 <section className="relative aspect-square">
                   <Image
                     src={item.front_image}
                     alt={item.name}
                     fill
-                    style={{ objectFit: "cover" }}
+                    className="object-cover"
                   />
                 </section>
-                <section className="space-y-4">
-                  <div className="">
+                <section className="space-y-4 pl-4">
+                  <div>
                     <p className="text-[13px] font-semibold">
                       {item.name
                         .replace(/-/g, " ")
-                        .slice(
-                          0,
-                          item.name.replace(/-/g, " ").lastIndexOf(" ")
-                        )}
+                        .split(" ")
+                        .slice(0, -1)
+                        .join(" ")}
                     </p>
                   </div>
                   <div className="flex justify-between pr-2 items-center">
-                    <p>size: {item.size}</p>
+                    <p className="text-xs text-gray-500">size: {item.size}</p>
                     <Trash2
                       onClick={() =>
                         handleDeleteCart(
                           item.name,
                           item.price,
                           item.size,
-                          item.color
+                          item.color,
                         )
                       }
-                      className="size-4 cursor-pointer text-red-600"
+                      className="size-4 cursor-pointer text-red-600 hover:scale-110 transition-transform"
                     />
                   </div>
-                  <div className="flex justify-between items-center ">
-                    <div>
-                      {/* Placeholder buttons for quantity +/- */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex border rounded-sm overflow-hidden">
                       <Button
-                        className="rounded-none cursor-pointer"
-                        variant="outline"
+                        className="rounded-none h-8 w-8 p-0"
+                        variant="ghost"
                         onClick={() => handleMinus(item.id)}
                       >
                         -
                       </Button>
-                      <Button
-                        className="rounded-none cursor-pointer"
-                        variant="outline"
-                      >
+                      <div className="h-8 w-10 flex items-center justify-center text-sm border-x">
                         {item.count}
-                      </Button>
+                      </div>
                       <Button
-                        className="rounded-none cursor-pointer"
-                        variant="outline"
-                        onClick={() => handlePlus(item)}
+                        className="rounded-none h-8 w-8 p-0"
+                        variant="ghost"
+                        onClick={() =>
+                          handlePlus(item as unknown as CartDataProps)
+                        }
                       >
                         +
                       </Button>
                     </div>
-
-                    <p className="text-sm font-semibol">
+                    <p className="text-sm font-semibold">
                       ${(parseFloat(item.price) * (item.count || 1)).toFixed(2)}
                     </p>
                   </div>
@@ -277,23 +263,18 @@ export function CartSheet({ action, sizeError }: DataProps) {
             ))}
         </div>
 
-        {cartItems && cartItems.length > 0 && (
-          <SheetFooter className="mt-auto">
+        {!cartIsEmpty && (
+          <SheetFooter className="mt-auto flex-col space-y-2">
             <div className="flex justify-between items-center w-full mb-4">
               <p className="text-lg font-bold">Total:</p>
-              <p className="text-lg font-bold ">${cartTotal.toFixed(2)}</p>
+              <p className="text-lg font-bold">${cartTotal.toFixed(2)}</p>
             </div>
-            <Link href={cartIsEmpty ? "#" : "/checkOut"}>
-              {" "}
-              <Button
-                onClick={() => {
-                  if (cartIsEmpty) return;
-                  setIsSheetOpen(false);
-                }}
-                disabled={cartIsEmpty}
-                type="submit"
-                className="w-full cursor-pointer "
-              >
+            <Link
+              href="/checkOut"
+              className="w-full"
+              onClick={() => setIsSheetOpen(false)}
+            >
+              <Button disabled={cartIsEmpty} className="w-full cursor-pointer">
                 Checkout
               </Button>
             </Link>
@@ -306,7 +287,11 @@ export function CartSheet({ action, sizeError }: DataProps) {
           </SheetFooter>
         )}
       </SheetContent>
-      {sizeError && <p className="text-red-500 mt-2 text-sm">{sizeError}</p>}
+      {sizeError && (
+        <div className="absolute top-0 left-0 w-full bg-red-100 p-2 text-center">
+          <p className="text-red-500 text-sm">{sizeError}</p>
+        </div>
+      )}
     </Sheet>
   );
 }

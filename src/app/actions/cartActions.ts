@@ -1,6 +1,6 @@
 "use server";
 
-import { createSupabaseClient } from "@/lib/server";
+import { createSupabaseClient } from "../lib/server";
 import { CartDataProps, CartItemProps, ClothDataProps } from "@/types/types";
 import { revalidatePath } from "next/cache";
 

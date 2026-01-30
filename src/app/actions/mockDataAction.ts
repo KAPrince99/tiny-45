@@ -1,6 +1,6 @@
 "use server";
 
-import { createSupabaseClient } from "@/lib/server";
+import { createSupabaseClient } from "../lib/server";
 import { mockData } from "@/mockData/mockData";
 
 import fs from "fs";
