@@ -1,25 +1,25 @@
 import { ClothDataProps } from "@/types/types";
 import Image from "next/image";
-import React from "react";
+import React, { memo } from "react";
 
 interface ClothCardProps {
-  data: ClothDataProps;
+  cloth: ClothDataProps;
 }
 
-export default function ClothCard({ data }: ClothCardProps) {
+function ClothCard({ cloth }: ClothCardProps) {
   return (
     <div className="flex  justify-center ">
       <button
         type="button"
         className="group flex w-full cursor-pointer flex-col items-stretch rounded-xl bg-white 
                  transition-all duration-300 ease-in-out lg:hover:shadow-sm lg:hover:-translate-y-2 "
-        aria-label={`View product ${data.name}`}
+        aria-label={`View product ${cloth.name}`}
       >
         <div className="">
           <div className="relative aspect-[3/4] w-full">
             <Image
-              src={data.front_image}
-              alt={data.name}
+              src={cloth.front_image}
+              alt={cloth.name}
               fill
               className="rounded-lg object-cover"
               style={{ boxShadow: "white" }}
@@ -31,18 +31,19 @@ export default function ClothCard({ data }: ClothCardProps) {
 
         <div className="flex flex-col justify-center flex-shrink-0 items-start p-4 bg-white group-hover:bg-white transition-colors duration-300 ">
           <div className="text-[12px] font-semibold truncate text-gray-800 group-hover:underline">
-            {data.name
+            {cloth.name
               .replace(/-/g, " ")
-              .slice(0, data.name.replace(/-/g, " ").lastIndexOf(" "))}
+              .slice(0, cloth.name.replace(/-/g, " ").lastIndexOf(" "))}
           </div>
           <div className="text-[12px] sm:text-sm text-gray-400 font-mono">
-            {data.color}
+            {cloth.color}
           </div>
           <div className="text-[12px] sm:text-sm font-medium text-gray-600">
-            ${data.price}
+            ${cloth.price}
           </div>
         </div>
       </button>
     </div>
   );
 }
+export default memo(ClothCard);

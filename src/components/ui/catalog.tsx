@@ -1,24 +1,25 @@
+"use client";
 import React from "react";
 import ShowCard from "./showCard";
-import { createSupabaseClient } from "../../app/lib/server";
+import { useQuery } from "@tanstack/react-query";
+import { getClothData } from "@/app/actions/cartActions";
+import { Loader2 } from "lucide-react";
 
-export default async function Catalog() {
-  const supabase = await createSupabaseClient();
+export default function Catalog() {
+  const { data: clothes, isLoading } = useQuery({
+    queryKey: ["clothes"],
+    queryFn: getClothData,
+    staleTime: Infinity,
+  });
+
   const title = "OUTWEAR";
-  const { data: clothes, error: errorClothes } = await supabase
-    .from("clothes")
-    .select("*");
-  if (errorClothes) {
-    console.error("Supabase error:", errorClothes.message);
-    return <p className="text-center text-red-500">Error loading catalog</p>;
-  }
 
-  if (!clothes?.length) {
-    return <p className="text-center text-gray-500">No clothes found</p>;
+  if (isLoading) {
+    return <Loader2 className="animate-spin" />;
   }
   return (
     <>
-      <ShowCard title={title} data={clothes} />
+      <ShowCard title={title} clothes={clothes} />
     </>
   );
 }

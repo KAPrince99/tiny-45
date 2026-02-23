@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { memo } from "react";
 import { Card, CardContent } from "./card";
 import { CartSheet } from "./cartSheet";
 import { Button } from "./button";
@@ -19,7 +19,7 @@ interface ProductInfoProps {
   handleAddToCart: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-export default function ProductInfo({
+function ProductInfo({
   data,
   sizeOptions,
   sizeError,
@@ -89,3 +89,4 @@ export default function ProductInfo({
     </main>
   );
 }
+export default memo(ProductInfo);

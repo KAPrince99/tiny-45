@@ -1,9 +1,12 @@
 "use client";
 
-import { supabase } from "../lib/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { setCartData, UniqueCartItemProps } from "../actions/cartActions";
+import { memo, useCallback, useEffect, useState } from "react";
+import {
+  fetchClothData,
+  setCartData,
+  UniqueCartItemProps,
+} from "../actions/cartActions";
 import { useCartStore } from "@/store/useCartStore";
 import ProductInfo from "@/components/ui/productInfo";
 import { ProductImageDisplay } from "@/components/ui/productImageDisplay";
@@ -11,20 +14,7 @@ import StyledWithCard from "@/components/ui/StyledWithCard";
 import { CartItemProps, ClothDataProps } from "@/types/types";
 import ClothNameSkeleton from "@/components/ui/clothNameSkeleton";
 
-async function fetchClothData(
-  decodedClothName: string,
-): Promise<ClothDataProps> {
-  const { data, error } = await supabase
-    .from("clothes")
-    .select("*")
-    .eq("name", decodedClothName)
-    .single();
-
-  if (error || !data) throw new Error(error?.message || "Cloth not found");
-  return data;
-}
-
-export default function ClothName({ clothName }: { clothName: string }) {
+function ClothName({ clothName }: { clothName: string }) {
   const decodedClothName = decodeURIComponent(clothName);
   const [chosenSize, setChosenSize] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -36,19 +26,18 @@ export default function ClothName({ clothName }: { clothName: string }) {
   const queryClient = useQueryClient();
   const sizeOptions = ["XS", "S", "M", "L", "XL"];
 
-  function handleSelectSize(selectedSize: string, i: number) {
+  /* 1. MOVE ALL HOOKS TO THE TOP */
+
+  const handleSelectSize = useCallback((selectedSize: string, i: number) => {
     setChosenSize(selectedSize);
     setSelectedIndex(i);
-  }
+  }, []);
 
   const { data, isLoading, error } = useQuery<ClothDataProps>({
     queryKey: ["clothData", decodedClothName],
     queryFn: () => fetchClothData(decodedClothName),
+    staleTime: 1000 * 60 * 5,
   });
-
-  useEffect(() => {
-    if (chosenSize) setSizeError(null);
-  }, [chosenSize, setSizeError]);
 
   const { mutateAsync: addToCartMutation, isPending: isAddingToCart } =
     useMutation({
@@ -98,33 +87,44 @@ export default function ClothName({ clothName }: { clothName: string }) {
       },
     });
 
+  // Defining the callback BEFORE the early returns
+  const handleAddToCart = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+
+      // Check for data presence inside the handler
+      if (!data) return;
+
+      if (!chosenSize) {
+        setSizeError("Please select a size before adding to cart.");
+        return;
+      }
+
+      const newCartItem: CartItemProps = {
+        front_image: data.front_image,
+        name: data.name,
+        price: data.price,
+        size: chosenSize,
+        cloth_id: data.id,
+        color: data.color,
+      };
+
+      setSelectedIndex(null);
+      setChosenSize(null);
+      await addToCartMutation(newCartItem);
+    },
+    [data, chosenSize, addToCartMutation, setSizeError],
+  );
+
+  useEffect(() => {
+    if (chosenSize) setSizeError(null);
+  }, [chosenSize, setSizeError]);
+
+  /* 2. PLACING EARLY RETURNS AFTER HOOKS */
+
   if (isLoading) return <ClothNameSkeleton />;
   if (error || !data)
     return <p className="text-red-500">Error Loading Cloth</p>;
-
-  const { id, name, price, front_image, color } = data;
-
-  async function handleAddToCart(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    if (!chosenSize) {
-      setSizeError("Please select a size before adding to cart.");
-      return;
-    }
-
-    const newCartItem: CartItemProps = {
-      front_image,
-      name,
-      price,
-      size: chosenSize,
-      cloth_id: id,
-      color,
-      // quantity: 1,
-    };
-
-    setSelectedIndex(null);
-    setChosenSize(null);
-    await addToCartMutation(newCartItem);
-  }
 
   return (
     <div className="min-h-screen bg-white py-10">
@@ -149,3 +149,5 @@ export default function ClothName({ clothName }: { clothName: string }) {
     </div>
   );
 }
+
+export default memo(ClothName);

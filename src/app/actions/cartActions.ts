@@ -21,6 +21,20 @@ export async function getClothData(): Promise<ClothDataProps[] | undefined> {
   }
 }
 
+export async function fetchClothData(
+  decodedClothName: string,
+): Promise<ClothDataProps> {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("clothes")
+    .select("*")
+    .eq("name", decodedClothName)
+    .single();
+
+  if (error || !data) throw new Error(error?.message || "Cloth not found");
+  return data;
+}
+
 export async function setCartData(cartData: CartDataProps) {
   const supabase = createSupabaseClient();
   try {
