@@ -9,7 +9,7 @@ import {
 } from "../actions/cartActions";
 import { useCartStore } from "@/store/useCartStore";
 import ProductInfo from "@/components/ui/productInfo";
-import { ProductImageDisplay } from "@/components/ui/productImageDisplay";
+import ProductImageDisplay from "@/components/ui/productImageDisplay";
 import StyledWithCard from "@/components/ui/StyledWithCard";
 import { CartItemProps, ClothDataProps } from "@/types/types";
 import ClothNameSkeleton from "@/components/ui/clothNameSkeleton";
@@ -25,8 +25,6 @@ function ClothName({ clothName }: { clothName: string }) {
 
   const queryClient = useQueryClient();
   const sizeOptions = ["XS", "S", "M", "L", "XL"];
-
-  /* 1. MOVE ALL HOOKS TO THE TOP */
 
   const handleSelectSize = useCallback((selectedSize: string, i: number) => {
     setChosenSize(selectedSize);
@@ -87,12 +85,9 @@ function ClothName({ clothName }: { clothName: string }) {
       },
     });
 
-  // Defining the callback BEFORE the early returns
   const handleAddToCart = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-
-      // Check for data presence inside the handler
       if (!data) return;
 
       if (!chosenSize) {
@@ -120,11 +115,11 @@ function ClothName({ clothName }: { clothName: string }) {
     if (chosenSize) setSizeError(null);
   }, [chosenSize, setSizeError]);
 
-  /* 2. PLACING EARLY RETURNS AFTER HOOKS */
-
   if (isLoading) return <ClothNameSkeleton />;
   if (error || !data)
-    return <p className="text-red-500">Error Loading Cloth</p>;
+    return (
+      <p className="text-red-500 text-center py-20">Error Loading Cloth</p>
+    );
 
   return (
     <div className="min-h-screen bg-white py-10">

@@ -18,13 +18,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useCartStore } from "@/store/useCartStore"; // Updated import
+import { useCartStore } from "@/store/useCartStore";
 import { CartDataProps, CartItemProps, ClothDataProps } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode, useEffect } from "react";
+import { memo, ReactNode, useCallback, useEffect, useMemo } from "react";
 import EmptyCart from "./emptyCart";
 
 interface DataProps {
@@ -34,7 +34,7 @@ interface DataProps {
   sizeError?: string | null;
 }
 
-export function CartSheet({ action, sizeError }: DataProps) {
+function CartSheet({ action, sizeError }: DataProps) {
   const isSheetOpen = useCartStore((state) => state.isSheetOpen);
   const setIsSheetOpen = useCartStore((state) => state.setIsSheetOpen);
   const setSumOfCartItems = useCartStore((state) => state.setSumOfCartItems);
@@ -45,11 +45,12 @@ export function CartSheet({ action, sizeError }: DataProps) {
   const { data: cartItems } = useQuery<UniqueCartItemProps[]>({
     queryKey: ["cart"],
     queryFn: getCartData,
-    staleTime: 0,
+    staleTime: 1000 * 60 * 5,
   });
 
-  const totalItemCount =
-    cartItems?.reduce((sum, item) => sum + (item.count || 1), 0) || 0;
+  const totalItemCount = useMemo(() => {
+    return cartItems?.reduce((sum, item) => sum + (item.count || 1), 0) || 0;
+  }, [cartItems]);
 
   useEffect(() => {
     setSumOfCartItems(totalItemCount);
@@ -60,7 +61,6 @@ export function CartSheet({ action, sizeError }: DataProps) {
     onMutate: async (itemToDeleteParams: DeleteCartItemParams) => {
       await queryClient.cancelQueries({ queryKey: ["cart"] });
       const previousCart = queryClient.getQueryData(["cart"]);
-
       queryClient.setQueryData<UniqueCartItemProps[]>(["cart"], (old) =>
         old?.filter(
           (item) =>
@@ -73,32 +73,28 @@ export function CartSheet({ action, sizeError }: DataProps) {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(["cart"], context?.previousCart);
-      alert("Failed to delete item. Please try again.");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-      const currentCartData = queryClient.getQueryData<UniqueCartItemProps[]>([
-        "cart",
-      ]);
-      if (!currentCartData || currentCartData.length === 0) {
-        setIsSheetOpen(false);
-      }
     },
   });
 
-  function handleDeleteCart(
-    itemName: string,
-    itemPrice: string,
-    itemSize: string | null,
-    itemColor: string,
-  ) {
-    deleteMutation.mutate({
-      name: itemName,
-      price: itemPrice,
-      size: itemSize,
-      color: itemColor,
-    });
-  }
+  const handleDeleteCart = useCallback(
+    (
+      itemName: string,
+      itemPrice: string,
+      itemSize: string | null,
+      itemColor: string,
+    ) => {
+      deleteMutation.mutate({
+        name: itemName,
+        price: itemPrice,
+        size: itemSize,
+        color: itemColor,
+      });
+    },
+    [deleteMutation],
+  );
 
   const { mutateAsync: addToCartMutation } = useMutation({
     mutationFn: setCartData,
@@ -107,17 +103,14 @@ export function CartSheet({ action, sizeError }: DataProps) {
       const previousCart = queryClient.getQueryData<UniqueCartItemProps[]>([
         "cart",
       ]);
-
       queryClient.setQueryData<UniqueCartItemProps[]>(["cart"], (old: any) => {
         if (!old) return [{ ...newCartItem, count: 1 }];
-
         const existingItemIndex = old.findIndex(
           (item: any) =>
             item.name === newCartItem.name &&
             item.size === newCartItem.size &&
             item.price === newCartItem.price,
         );
-
         if (existingItemIndex > -1) {
           const updatedCart = [...old];
           updatedCart[existingItemIndex] = {
@@ -128,53 +121,47 @@ export function CartSheet({ action, sizeError }: DataProps) {
         }
         return [...old, { ...newCartItem, count: 1 }];
       });
-
-      setSizeError(null);
       setIsSheetOpen(true);
       return { previousCart };
     },
-    onError: (_, __, context) => {
-      if (context?.previousCart) {
-        queryClient.setQueryData(["cart"], context.previousCart);
-        setIsSheetOpen(false);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
 
-  function handlePlus(cartData: CartDataProps) {
-    const newCartItem: CartItemProps = {
-      front_image: cartData.front_image,
-      name: cartData.name,
-      price: cartData.price,
-      size: cartData.size,
-      cloth_id: cartData.cloth_id,
-      color: cartData.color,
-      quantity: 1,
-    };
-    addToCartMutation(newCartItem);
-  }
+  const handlePlus = useCallback(
+    (cartData: CartDataProps) => {
+      const newCartItem: CartItemProps = {
+        front_image: cartData.front_image,
+        name: cartData.name,
+        price: cartData.price,
+        size: cartData.size,
+        cloth_id: cartData.cloth_id,
+        color: cartData.color,
+      };
+      addToCartMutation(newCartItem);
+    },
+    [addToCartMutation],
+  );
 
   const { mutate: removeSingle } = useMutation({
     mutationFn: deleteSingleCartItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
 
-  function handleMinus(id: string) {
-    removeSingle(id);
-  }
+  const handleMinus = useCallback(
+    (id: string) => removeSingle(id),
+    [removeSingle],
+  );
 
   const cartIsEmpty = !cartItems || cartItems.length === 0;
 
-  const cartTotal =
-    cartItems?.reduce(
-      (sum, item) => sum + parseFloat(item.price) * (item.count || 1),
-      0,
-    ) || 0;
+  const cartTotal = useMemo(() => {
+    return (
+      cartItems?.reduce(
+        (sum, item) => sum + parseFloat(item.price) * (item.count || 1),
+        0,
+      ) || 0
+    );
+  }, [cartItems]);
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -209,7 +196,7 @@ export function CartSheet({ action, sizeError }: DataProps) {
                   />
                 </section>
                 <section className="space-y-4 pl-4">
-                  <div>
+                  <div className="flex justify-between items-start">
                     <p className="text-[13px] font-semibold">
                       {item.name
                         .replace(/-/g, " ")
@@ -217,9 +204,6 @@ export function CartSheet({ action, sizeError }: DataProps) {
                         .slice(0, -1)
                         .join(" ")}
                     </p>
-                  </div>
-                  <div className="flex justify-between pr-2 items-center">
-                    <p className="text-xs text-gray-500">size: {item.size}</p>
                     <Trash2
                       onClick={() =>
                         handleDeleteCart(
@@ -232,10 +216,11 @@ export function CartSheet({ action, sizeError }: DataProps) {
                       className="size-4 cursor-pointer text-red-600 hover:scale-110 transition-transform"
                     />
                   </div>
+                  <p className="text-xs text-gray-500">size: {item.size}</p>
                   <div className="flex justify-between items-center">
-                    <div className="flex border rounded-sm overflow-hidden">
+                    <div className="flex border rounded-sm">
                       <Button
-                        className="rounded-none h-8 w-8 p-0"
+                        className="h-8 w-8 p-0"
                         variant="ghost"
                         onClick={() => handleMinus(item.id)}
                       >
@@ -245,7 +230,7 @@ export function CartSheet({ action, sizeError }: DataProps) {
                         {item.count}
                       </div>
                       <Button
-                        className="rounded-none h-8 w-8 p-0"
+                        className="h-8 w-8 p-0"
                         variant="ghost"
                         onClick={() =>
                           handlePlus(item as unknown as CartDataProps)
@@ -274,24 +259,13 @@ export function CartSheet({ action, sizeError }: DataProps) {
               className="w-full"
               onClick={() => setIsSheetOpen(false)}
             >
-              <Button disabled={cartIsEmpty} className="w-full cursor-pointer">
-                Checkout
-              </Button>
+              <Button className="w-full">Checkout</Button>
             </Link>
-
-            <SheetClose asChild>
-              <Button variant="outline" className="w-full">
-                Close
-              </Button>
-            </SheetClose>
           </SheetFooter>
         )}
       </SheetContent>
-      {sizeError && (
-        <div className="absolute top-0 left-0 w-full bg-red-100 p-2 text-center">
-          <p className="text-red-500 text-sm">{sizeError}</p>
-        </div>
-      )}
     </Sheet>
   );
 }
+
+export default memo(CartSheet);

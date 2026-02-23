@@ -1,12 +1,13 @@
 "use client";
 import React, { memo } from "react";
 import { Card, CardContent } from "./card";
-import { CartSheet } from "./cartSheet";
+
 import { Button } from "./button";
 import { Loader2 } from "lucide-react";
 import { AccordionInfo } from "./accordionInfo";
 import { BorderBeam } from "./border-beam";
 import { ClothDataProps } from "@/types/types";
+import CartSheet from "./cartSheet";
 
 interface ProductInfoProps {
   data: ClothDataProps;

@@ -5,10 +5,10 @@ import { ClothDataProps } from "@/types/types";
 
 interface ShowCardProps {
   title: string;
-  clothes: ClothDataProps[] | undefined;
+  data: ClothDataProps[] | undefined;
 }
 
-function ShowCard({ title, clothes }: ShowCardProps) {
+function ShowCard({ title, data: clothes }: ShowCardProps) {
   return (
     <main className="container mx-auto px-4 py-8 ">
       <div className="text-md md:text-lg font-bold mb-2 text-left ml-4">

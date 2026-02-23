@@ -1,4 +1,4 @@
-import * as React from "react";
+'use client";';
 
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -11,8 +11,9 @@ import {
 
 import Image from "next/image";
 import { ClothDataProps } from "@/types/types";
+import { memo } from "react";
 
-export function ProductImageDisplay({ data }: { data: ClothDataProps }) {
+function ProductImageDisplay({ data }: { data: ClothDataProps }) {
   const { front_image, image_p1, image_p2, image_p3, name } = data;
   return (
     <Carousel className="w-full  mx-auto  ">
@@ -40,3 +41,4 @@ export function ProductImageDisplay({ data }: { data: ClothDataProps }) {
     </Carousel>
   );
 }
+export default memo(ProductImageDisplay);

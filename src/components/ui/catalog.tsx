@@ -19,7 +19,7 @@ export default function Catalog() {
   }
   return (
     <>
-      <ShowCard title={title} clothes={clothes} />
+      <ShowCard title={title} data={clothes} />
     </>
   );
 }

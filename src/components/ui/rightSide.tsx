@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { CartSheet } from "./cartSheet";
+import CartSheet from "./cartSheet";
 import { Handbag, User } from "lucide-react";
 import { Badge } from "./badge";
 import Link from "next/link";

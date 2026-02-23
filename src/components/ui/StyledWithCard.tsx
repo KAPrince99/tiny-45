@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import ShowCard from "./showCard";
 import { getClothData } from "@/app/actions/cartActions";
 import { useQuery } from "@tanstack/react-query";
@@ -29,7 +29,7 @@ export default function StyledWithCard() {
     staleTime: 30000,
   });
 
-  const alternatives = shuffleArray(data).slice(0, 4);
+  const alternatives = useMemo(() => shuffleArray(data).slice(0, 4), [data]);
 
   return <ShowCard title="STYLED WITH" data={alternatives} />;
 }
