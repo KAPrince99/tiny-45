@@ -82,6 +82,7 @@ function ClothName({ clothName }: { clothName: string }) {
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: ["cart"] });
+        queryClient.setQueryData(["cart"], (old: any) => old); // Prevent refetching
       },
     });
 

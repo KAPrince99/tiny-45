@@ -11,14 +11,18 @@ import {
 
 import Image from "next/image";
 import { ClothDataProps } from "@/types/types";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 function ProductImageDisplay({ data }: { data: ClothDataProps }) {
   const { front_image, image_p1, image_p2, image_p3, name } = data;
+  const images = useMemo(
+    () => [front_image, image_p1, image_p2, image_p3],
+    [front_image, image_p1, image_p2, image_p3],
+  );
   return (
     <Carousel className="w-full  mx-auto  ">
       <CarouselContent>
-        {[front_image, image_p1, image_p2, image_p3].map((image, index) => (
+        {images.map((image, index) => (
           <CarouselItem key={index}>
             <div className="p-1">
               <Card className=" shadow-none border-none  ">

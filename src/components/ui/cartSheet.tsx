@@ -11,34 +11,43 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCartStore } from "@/store/useCartStore";
 import { CartDataProps, CartItemProps, ClothDataProps } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { memo, ReactNode, useCallback, useEffect, useMemo } from "react";
+import {
+  memo,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import EmptyCart from "./emptyCart";
+import { useRouter } from "next/navigation";
 
 interface DataProps {
-  action: ReactNode;
+  action?: ReactNode;
   data?: ClothDataProps;
   chosenSize?: string | null;
   sizeError?: string | null;
 }
 
-function CartSheet({ action, sizeError }: DataProps) {
+function CartSheet({ action }: DataProps) {
+  const router = useRouter();
   const isSheetOpen = useCartStore((state) => state.isSheetOpen);
   const setIsSheetOpen = useCartStore((state) => state.setIsSheetOpen);
   const setSumOfCartItems = useCartStore((state) => state.setSumOfCartItems);
-  const setSizeError = useCartStore((state) => state.setSizeError);
+  const [isLoading, setIsLoading] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -71,12 +80,7 @@ function CartSheet({ action, sizeError }: DataProps) {
       );
       return { previousCart };
     },
-    onError: (err, variables, context) => {
-      queryClient.setQueryData(["cart"], context?.previousCart);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
 
   const handleDeleteCart = useCallback(
@@ -100,9 +104,6 @@ function CartSheet({ action, sizeError }: DataProps) {
     mutationFn: setCartData,
     onMutate: async (newCartItem: CartItemProps) => {
       await queryClient.cancelQueries({ queryKey: ["cart"] });
-      const previousCart = queryClient.getQueryData<UniqueCartItemProps[]>([
-        "cart",
-      ]);
       queryClient.setQueryData<UniqueCartItemProps[]>(["cart"], (old: any) => {
         if (!old) return [{ ...newCartItem, count: 1 }];
         const existingItemIndex = old.findIndex(
@@ -121,8 +122,7 @@ function CartSheet({ action, sizeError }: DataProps) {
         }
         return [...old, { ...newCartItem, count: 1 }];
       });
-      setIsSheetOpen(true);
-      return { previousCart };
+      return {};
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
@@ -163,20 +163,26 @@ function CartSheet({ action, sizeError }: DataProps) {
     );
   }, [cartItems]);
 
+  const handleCheckout = useCallback(() => {
+    setIsLoading(true);
+    setIsSheetOpen(false);
+
+    router.push("/checkOut");
+  }, [router, setIsSheetOpen]);
+
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-      {action}
+      {action && <SheetTrigger asChild>{action}</SheetTrigger>}
       <SheetContent
         side="right"
         className="w-[355px] sm:w-[540px] flex flex-col"
       >
         <SheetHeader>
           <SheetTitle>Cart</SheetTitle>
-          {cartIsEmpty && <EmptyCart />}
-          {!cartIsEmpty && (
-            <SheetDescription>
-              Review your selected items before proceeding to checkout.
-            </SheetDescription>
+          {cartIsEmpty ? (
+            <EmptyCart />
+          ) : (
+            <SheetDescription>Review your items.</SheetDescription>
           )}
         </SheetHeader>
 
@@ -198,11 +204,7 @@ function CartSheet({ action, sizeError }: DataProps) {
                 <section className="space-y-4 pl-4">
                   <div className="flex justify-between items-start">
                     <p className="text-[13px] font-semibold">
-                      {item.name
-                        .replace(/-/g, " ")
-                        .split(" ")
-                        .slice(0, -1)
-                        .join(" ")}
+                      {item.name.replace(/-/g, " ")}
                     </p>
                     <Trash2
                       onClick={() =>
@@ -213,14 +215,14 @@ function CartSheet({ action, sizeError }: DataProps) {
                           item.color,
                         )
                       }
-                      className="size-4 cursor-pointer text-red-600 hover:scale-110 transition-transform"
+                      className="size-4 cursor-pointer text-red-600 hover:scale-110"
                     />
                   </div>
                   <p className="text-xs text-gray-500">size: {item.size}</p>
                   <div className="flex justify-between items-center">
                     <div className="flex border rounded-sm">
                       <Button
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 cursor-pointer"
                         variant="ghost"
                         onClick={() => handleMinus(item.id)}
                       >
@@ -230,7 +232,7 @@ function CartSheet({ action, sizeError }: DataProps) {
                         {item.count}
                       </div>
                       <Button
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 cursor-pointer"
                         variant="ghost"
                         onClick={() =>
                           handlePlus(item as unknown as CartDataProps)
@@ -251,16 +253,25 @@ function CartSheet({ action, sizeError }: DataProps) {
         {!cartIsEmpty && (
           <SheetFooter className="mt-auto flex-col space-y-2">
             <div className="flex justify-between items-center w-full mb-4">
-              <p className="text-lg font-bold">Total:</p>
-              <p className="text-lg font-bold">${cartTotal.toFixed(2)}</p>
+              <p className="text-lg font-bold">
+                Total: ${cartTotal.toFixed(2)}
+              </p>
             </div>
-            <Link
-              href="/checkOut"
-              className="w-full"
-              onClick={() => setIsSheetOpen(false)}
+
+            <Button
+              className="w-full cursor-pointer h-12"
+              disabled={isLoading}
+              onClick={handleCheckout}
             >
-              <Button className="w-full">Checkout</Button>
-            </Link>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Checkout"
+              )}
+            </Button>
           </SheetFooter>
         )}
       </SheetContent>
