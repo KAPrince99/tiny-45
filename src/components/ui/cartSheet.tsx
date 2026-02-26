@@ -168,6 +168,7 @@ function CartSheet({ action }: DataProps) {
     setIsSheetOpen(false);
 
     router.push("/checkOut");
+    setIsLoading(false);
   }, [router, setIsSheetOpen]);
 
   return (
