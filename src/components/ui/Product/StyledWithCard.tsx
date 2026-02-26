@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useMemo } from "react";
-import ShowCard from "./showCard";
+
 import { getClothData } from "@/app/actions/cartActions";
 import { useQuery } from "@tanstack/react-query";
 import { ClothDataProps } from "@/types/types";
+import ShowCard from "../Catalog/showCard";
 
 function shuffleArray(array: ClothDataProps[] | undefined): ClothDataProps[] {
   if (!array) {

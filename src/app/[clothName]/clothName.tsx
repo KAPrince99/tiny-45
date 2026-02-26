@@ -8,11 +8,9 @@ import {
   UniqueCartItemProps,
 } from "../actions/cartActions";
 import { useCartStore } from "@/store/useCartStore";
-import ProductInfo from "@/components/ui/productInfo";
-import ProductImageDisplay from "@/components/ui/productImageDisplay";
-import StyledWithCard from "@/components/ui/StyledWithCard";
 import { CartItemProps, ClothDataProps } from "@/types/types";
 import ClothNameSkeleton from "@/components/ui/clothNameSkeleton";
+import ProductPresenter from "@/components/ui/Product/ProductPresenter";
 
 function ClothName({ clothName }: { clothName: string }) {
   const decodedClothName = decodeURIComponent(clothName);
@@ -82,7 +80,7 @@ function ClothName({ clothName }: { clothName: string }) {
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: ["cart"] });
-        queryClient.setQueryData(["cart"], (old: any) => old); // Prevent refetching
+        queryClient.setQueryData(["cart"], (old: any) => old);
       },
     });
 
@@ -123,26 +121,16 @@ function ClothName({ clothName }: { clothName: string }) {
     );
 
   return (
-    <div className="min-h-screen bg-white py-10">
-      <div className="mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-1 lg:gap-12">
-          <section className="w-full lg:col-span-2">
-            <ProductImageDisplay data={data} />
-          </section>
-          <ProductInfo
-            data={data}
-            chosenSize={chosenSize}
-            sizeError={sizeError}
-            sizeOptions={sizeOptions}
-            selectedIndex={selectedIndex}
-            isAddingToCart={isAddingToCart}
-            handleSelectSize={handleSelectSize}
-            handleAddToCart={handleAddToCart}
-          />
-        </div>
-        <StyledWithCard />
-      </div>
-    </div>
+    <ProductPresenter
+      data={data}
+      chosenSize={chosenSize}
+      sizeError={sizeError}
+      sizeOptions={sizeOptions}
+      selectedIndex={selectedIndex}
+      isAddingToCart={isAddingToCart}
+      handleSelectSize={handleSelectSize}
+      handleAddToCart={handleAddToCart}
+    />
   );
 }
 
