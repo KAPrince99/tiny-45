@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "./button";
+import { Button } from "../button";
 import UploadButton from "./uploadButton";
 import { useEffect, useState } from "react";
 import Link from "next/link";

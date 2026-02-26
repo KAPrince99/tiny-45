@@ -23,7 +23,7 @@ import { CartDataProps, CartItemProps, ClothDataProps } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+
 import {
   memo,
   ReactNode,
@@ -32,7 +32,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import EmptyCart from "./emptyCart";
+import EmptyCart from "../emptyCart";
 import { useRouter } from "next/navigation";
 
 interface DataProps {

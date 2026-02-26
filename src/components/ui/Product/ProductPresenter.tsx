@@ -4,16 +4,21 @@ import ProductImageDisplay from "./productImageDisplay";
 import ProductInfo from "./productInfo";
 import { ClothDataProps } from "@/types/types";
 import StyledWithCard from "./StyledWithCard";
+import ClothNameSkeleton from "../clothNameSkeleton";
+import ErrorMessage from "../ErrorMessage";
 
 interface ProductPresenterProps {
-  data: ClothDataProps;
+  data: ClothDataProps | undefined;
   sizeOptions: string[];
   sizeError?: string | null;
   chosenSize?: string | null;
   isAddingToCart: boolean;
+  isLoading?: boolean;
+  error?: Error | null;
   selectedIndex?: number | null;
   handleSelectSize: (selectedSize: string, i: number) => void;
   handleAddToCart: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onRetry: () => void;
 }
 
 function ProductPresenter({
@@ -22,10 +27,24 @@ function ProductPresenter({
   sizeError,
   chosenSize,
   isAddingToCart,
+  isLoading,
+  error,
   selectedIndex,
   handleSelectSize,
   handleAddToCart,
+  onRetry,
 }: ProductPresenterProps) {
+  if (isLoading) return <ClothNameSkeleton />;
+  if (error || !data)
+    return (
+      <ErrorMessage
+        message={
+          error?.message ||
+          "Failed to load product details. Please try again later."
+        }
+        onRetry={onRetry}
+      />
+    );
   return (
     <div className="min-h-screen bg-white py-10">
       <div className="mx-auto px-2 sm:px-6 lg:px-8">

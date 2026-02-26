@@ -9,7 +9,6 @@ import {
 } from "../actions/cartActions";
 import { useCartStore } from "@/store/useCartStore";
 import { CartItemProps, ClothDataProps } from "@/types/types";
-import ClothNameSkeleton from "@/components/ui/clothNameSkeleton";
 import ProductPresenter from "@/components/ui/Product/ProductPresenter";
 
 function ClothName({ clothName }: { clothName: string }) {
@@ -114,11 +113,11 @@ function ClothName({ clothName }: { clothName: string }) {
     if (chosenSize) setSizeError(null);
   }, [chosenSize, setSizeError]);
 
-  if (isLoading) return <ClothNameSkeleton />;
-  if (error || !data)
-    return (
-      <p className="text-red-500 text-center py-20">Error Loading Cloth</p>
-    );
+  const handleRetry = useCallback(() => {
+    return queryClient.invalidateQueries({
+      queryKey: ["clothData", decodedClothName],
+    });
+  }, [queryClient, decodedClothName]);
 
   return (
     <ProductPresenter
@@ -128,8 +127,11 @@ function ClothName({ clothName }: { clothName: string }) {
       sizeOptions={sizeOptions}
       selectedIndex={selectedIndex}
       isAddingToCart={isAddingToCart}
+      isLoading={isLoading}
+      error={error}
       handleSelectSize={handleSelectSize}
       handleAddToCart={handleAddToCart}
+      onRetry={handleRetry}
     />
   );
 }

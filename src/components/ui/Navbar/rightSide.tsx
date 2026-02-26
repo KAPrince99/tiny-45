@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import CartSheet from "./cartSheet";
 import { Handbag, User } from "lucide-react";
-import { Badge } from "./badge";
+import { Badge } from "../badge";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import CartSheet from "./cartSheet";
 
 export default function RightSide() {
   const sumOfCartItems = useCartStore((state) => state.sumOfCartItems);

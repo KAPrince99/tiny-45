@@ -1,6 +1,6 @@
 "use client";
 import React, { useTransition } from "react";
-import { Button } from "./button";
+import { Button } from "../button";
 import { setClothData } from "@/app/actions/mockDataAction";
 import { Loader2 } from "lucide-react";
 

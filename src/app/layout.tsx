@@ -1,6 +1,6 @@
 import { Roboto_Slab } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/ui/header";
+import Header from "@/components/ui/Navbar/header";
 import QueryProvider from "@/providers/queryProvider";
 
 import ScrollToTop from "@/components/ui/scrollToTop";
