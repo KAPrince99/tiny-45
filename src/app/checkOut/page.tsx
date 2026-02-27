@@ -1,16 +1,14 @@
 import { Metadata } from "next";
-import CheckOut from "./checkOut";
-import { getCartTotal } from "../actions/cartActions";
+import CheckoutWrapper from "@/components/checkout/CheckoutWrapper";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: " Checkout",
 };
 
 export default async function Page() {
-  const cartTotal = await getCartTotal();
   return (
     <>
-      <CheckOut cartTotal={cartTotal} />
+      <CheckoutWrapper />
     </>
   );
 }

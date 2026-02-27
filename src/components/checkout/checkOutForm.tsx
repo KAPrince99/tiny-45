@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -17,7 +17,7 @@ import {
 import convertToSubCurrency from "../../../utils/convertToSubCurrency";
 import { Loader2 } from "lucide-react";
 
-export default function CheckOutForm({ cartTotal }: { cartTotal: number }) {
+function CheckOutForm({ cartTotal }: { cartTotal: number }) {
   const stripe = useStripe();
   const elements = useElements();
   const [clientSecret, setClientSecret] = useState("");
@@ -109,3 +109,4 @@ export default function CheckOutForm({ cartTotal }: { cartTotal: number }) {
     </Card>
   );
 }
+export default memo(CheckOutForm);

@@ -5,7 +5,7 @@ import { ClothDataProps } from "@/types/types";
 
 interface ShowCardProps {
   title: string;
-  data: ClothDataProps[] | undefined;
+  data: ClothDataProps[] | [];
 }
 
 function ShowCard({ title, data: clothes }: ShowCardProps) {

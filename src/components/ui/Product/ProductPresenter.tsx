@@ -4,7 +4,7 @@ import ProductImageDisplay from "./productImageDisplay";
 import ProductInfo from "./productInfo";
 import { ClothDataProps } from "@/types/types";
 import StyledWithCard from "./StyledWithCard";
-import ClothNameSkeleton from "../clothNameSkeleton";
+import ClothNameSkeleton from "./clothNameSkeleton";
 import ErrorMessage from "../ErrorMessage";
 
 interface ProductPresenterProps {

@@ -15,7 +15,7 @@ export async function getClothData(): Promise<ClothDataProps[] | undefined> {
     const { data, error } = await supabase.from("clothes").select("*");
     if (error) throw new Error(error.message);
 
-    return data as ClothDataProps[] | undefined;
+    return data as ClothDataProps[] | [];
   } catch (error) {
     console.error("Error fetching Cloth Data:", error);
   }

@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import ClothNameWrapper from "@/components/ui/ClothNameWrapper";
+import ClothNameWrapper from "@/components/ui/Product/ClothNameWrapper";
 
 type Params = {
   params: Promise<{ clothName: string }>;

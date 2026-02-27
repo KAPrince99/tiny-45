@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2, Trash2 } from "lucide-react";
 import Image from "next/image";
-import EmptyCart from "../emptyCart";
+import EmptyCart from "./emptyCart";
 import { CartItemProps } from "@/types/types";
 import { memo } from "react";
 
@@ -65,7 +65,7 @@ function CartSheetPresenter({
 
         <div className="flex-1 overflow-y-auto space-y-4 py-4">
           {!cartIsEmpty &&
-            cartItems.map((item, index) => (
+            cartItems?.map((item, index) => (
               <div
                 key={item.id || index}
                 className="grid grid-cols-[1fr_2fr] p-2 shadow-sm"
